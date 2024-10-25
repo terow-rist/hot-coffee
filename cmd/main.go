@@ -1,7 +1,16 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"log"
+	"net/http"
+)
 
 func main() {
-	fmt.Println("LALALA")
+	http.HandleFunc("/{SomeShit}", jopaHandler)
+	log.Fatal(http.ListenAndServe(":8080", nil))
+}
+
+func jopaHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintln(w, "Dog shit")
 }
