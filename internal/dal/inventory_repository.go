@@ -11,6 +11,7 @@ import (
 type InventoryRepository interface {
 	AddItem(item *models.InventoryItem) error
 	GetAllItems() ([]models.InventoryItem, error)
+	SaveItems(items []models.InventoryItem) error
 }
 
 type FileInventoryRepository struct{}
@@ -66,4 +67,10 @@ func (r *FileInventoryRepository) saveItems(items []models.InventoryItem) error 
 
 	// Write the inventory items back to the file as JSON
 	return json.NewEncoder(file).Encode(items)
+}
+
+// dal/file_inventory_repository.go
+
+func (r *FileInventoryRepository) SaveItems(items []models.InventoryItem) error {
+	return r.saveItems(items)
 }
