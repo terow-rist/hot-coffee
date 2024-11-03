@@ -21,7 +21,12 @@ func (h *InventoryHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	path := r.URL.Path
 	switch r.Method {
 	case http.MethodPost:
-		h.AddInventoryItem(w, r)
+		if strings.HasPrefix(path, "/inventory/") {
+			http.Error(w, "Invalid request", http.StatusBadRequest)
+		} else {
+			h.AddInventoryItem(w, r)
+		}
+
 	case http.MethodGet:
 		if strings.HasPrefix(path, "/inventory/") {
 			// Extract the ID from the URL

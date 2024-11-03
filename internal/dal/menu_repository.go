@@ -11,7 +11,7 @@ import (
 type MenuRepository interface {
 	AddItem(item *models.MenuItem) error
 	GetAllItems() ([]models.MenuItem, error)
-	//...
+	SaveItems(items []models.MenuItem) error
 }
 
 type FileMenuRepository struct{}
@@ -56,4 +56,8 @@ func (r *FileMenuRepository) saveItems(items []models.MenuItem) error {
 	defer file.Close()
 
 	return json.NewEncoder(file).Encode(items)
+}
+
+func (r *FileMenuRepository) SaveItems(items []models.MenuItem) error {
+	return r.saveItems(items)
 }
