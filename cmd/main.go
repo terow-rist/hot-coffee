@@ -9,14 +9,15 @@ import (
 	"hot-coffee/internal/service"
 )
 
+// main.go
 func main() {
 	// Initialize the inventory repository and service
-	inventoryRepo := &dal.FileInventoryRepository{}                   // Ensure this is defined correctly in dal
-	inventoryService := service.NewInventoryService(inventoryRepo)    // Use the NewInventoryService constructor
-	inventoryHandler := handler.NewInventoryHandler(inventoryService) // Pass the service to the handler
+	inventoryRepo := &dal.FileInventoryRepository{}
+	inventoryService := service.NewInventoryService(inventoryRepo)
+	inventoryHandler := handler.NewInventoryHandler(inventoryService)
 
-	// Register the /inventory route
-	http.HandleFunc("/inventory", inventoryHandler.AddInventoryItem)
+	// Register the /inventory route to handle both POST and GET requests
+	http.Handle("/inventory", inventoryHandler)
 
 	fmt.Println("Server is running on port 8080")
 	if err := http.ListenAndServe(":8080", nil); err != nil {

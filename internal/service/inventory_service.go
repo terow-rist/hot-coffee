@@ -22,4 +22,9 @@ func (s *InventoryService) AddItem(item *models.InventoryItem) error {
 	return s.repo.AddItem(item)
 }
 
+// service/inventory_service.go
+func (s *InventoryService) GetAllItems() ([]models.InventoryItem, error) {
+	return s.repo.GetAllItems()
+}
+
 // Add other service methods as needed
