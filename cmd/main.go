@@ -4,18 +4,22 @@ import (
 	"fmt"
 	"net/http"
 
+	"hot-coffee/internal/dal"
 	"hot-coffee/internal/handler"
-	"hot-coffee/internal/service" // Adjust the import path
+	"hot-coffee/internal/service"
 )
 
 func main() {
-	orderService := &service.OrderService{}
-	orderHandler := handler.NewOrderHandler(orderService) // Pass pointer directly
-	fmt.Println("Server is running on port 8080")         // Change the message
-	http.HandleFunc("/orders", orderHandler.CreateOrder)
+	// Initialize the inventory repository and service
+	inventoryRepo := &dal.FileInventoryRepository{}                   // Ensure this is defined correctly in dal
+	inventoryService := service.NewInventoryService(inventoryRepo)    // Use the NewInventoryService constructor
+	inventoryHandler := handler.NewInventoryHandler(inventoryService) // Pass the service to the handler
 
-	err := http.ListenAndServe(":8080", nil) // Handle potential errors
-	if err != nil {
-		fmt.Printf("Failed to start server: %v\n", err)
+	// Register the /inventory route
+	http.HandleFunc("/inventory", inventoryHandler.AddInventoryItem)
+
+	fmt.Println("Server is running on port 8080")
+	if err := http.ListenAndServe(":8080", nil); err != nil {
+		fmt.Printf("Error starting server: %v\n", err)
 	}
 }
