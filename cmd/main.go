@@ -2,15 +2,20 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net/http"
+
+	"hot-coffee/internal/handler"
+	"hot-coffee/internal/service" // Adjust the import path
 )
 
 func main() {
-	http.HandleFunc("/{SomeShit}", jopaHandler)
-	log.Fatal(http.ListenAndServe(":8080", nil))
-}
+	orderService := &service.OrderService{}
+	orderHandler := handler.NewOrderHandler(orderService) // Pass pointer directly
+	fmt.Println("Server is running on port 8080")         // Change the message
+	http.HandleFunc("/orders", orderHandler.CreateOrder)
 
-func jopaHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "Dog shit")
+	err := http.ListenAndServe(":8080", nil) // Handle potential errors
+	if err != nil {
+		fmt.Printf("Failed to start server: %v\n", err)
+	}
 }
