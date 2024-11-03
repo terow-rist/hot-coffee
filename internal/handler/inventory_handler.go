@@ -38,9 +38,26 @@ func (h *InventoryHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		} else {
 			http.Error(w, "Invalid request", http.StatusBadRequest)
 		}
+	case http.MethodDelete:
+		if strings.HasPrefix(path, "/inventory/") {
+			// Extract the ID from the URL
+			id := strings.TrimPrefix(path, "/inventory/")
+			h.DeleteInventoryItem(w, r, id) // Pass the ID to the handler
+		} else {
+			http.Error(w, "Invalid request", http.StatusBadRequest)
+		}
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
+}
+
+func (h *InventoryHandler) DeleteInventoryItem(w http.ResponseWriter, r *http.Request, id string) {
+	if err := h.service.DeleteItem(id); err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent) // No content response for successful deletion
 }
 
 func (h *InventoryHandler) AddInventoryItem(w http.ResponseWriter, r *http.Request) {

@@ -65,4 +65,19 @@ func (s *InventoryService) UpdateItem(item *models.InventoryItem) error {
 	return models.ErrItemNotFound // Return error if the item is not found
 }
 
-// Add other service methods as needed
+func (s *InventoryService) DeleteItem(id string) error {
+	items, err := s.repo.GetAllItems()
+	if err != nil {
+		return err
+	}
+
+	for i, existingItem := range items {
+		if existingItem.IngredientID == id {
+			// Remove the item from the slice
+			items = append(items[:i], items[i+1:]...) // Remove item at index i
+			return s.repo.SaveItems(items)            // Save updated items back to the repository
+		}
+	}
+
+	return models.ErrItemNotFound // Return error if the item is not found
+}
