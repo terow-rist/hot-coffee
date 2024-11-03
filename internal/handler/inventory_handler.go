@@ -18,6 +18,7 @@ func NewInventoryHandler(service *service.InventoryService) *InventoryHandler {
 }
 
 func (h *InventoryHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
 	path := r.URL.Path
 	switch r.Method {
 	case http.MethodPost:

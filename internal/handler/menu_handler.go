@@ -18,6 +18,7 @@ func NewMenuHandler(service *service.MenuService) *MenuHandler {
 }
 
 func (h *MenuHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
 	path := r.URL.Path
 	switch r.Method {
 	case http.MethodPost:
