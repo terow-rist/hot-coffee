@@ -10,14 +10,19 @@ import (
 )
 
 func main() {
-	// Initialize the inventory repository and service
 	inventoryRepo := &dal.FileInventoryRepository{}
+	menuRepo := &dal.FileMenuRepository{}
+
 	inventoryService := service.NewInventoryService(inventoryRepo)
+	menuService := service.NewMenuService(menuRepo)
+
 	inventoryHandler := handler.NewInventoryHandler(inventoryService)
+	menuHandler := handler.NewMenuHandler(menuService)
 
 	// Register the /inventory route to handle all methods through ServeHTTP
 	http.Handle("/inventory", inventoryHandler)
 	http.Handle("/inventory/", inventoryHandler)
+	http.Handle("/menu", menuHandler)
 
 	fmt.Println("Server is running on port 8080")
 	if err := http.ListenAndServe(":8080", nil); err != nil {
