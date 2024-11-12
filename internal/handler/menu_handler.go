@@ -26,7 +26,7 @@ func (h *MenuHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodPost:
 		if strings.HasPrefix(path, "/menu/") {
-			http.Error(w, "Invalid request", http.StatusBadRequest)
+			respondWithError(w, "Invalid request", http.StatusBadRequest)
 		} else {
 			h.AddMenuItem(w, r)
 		}
@@ -42,17 +42,17 @@ func (h *MenuHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			id := strings.TrimPrefix(path, "/menu/")
 			h.UpdateMenuItem(w, r, id)
 		} else {
-			http.Error(w, "Invalid request", http.StatusBadRequest)
+			respondWithError(w, "Invalid request", http.StatusBadRequest)
 		}
 	case http.MethodDelete:
 		if strings.HasPrefix(path, "/menu/") {
 			id := strings.TrimPrefix(path, "/menu/")
 			h.DeleteMenuItem(w, r, id)
 		} else {
-			http.Error(w, "Invalid request", http.StatusBadRequest)
+			respondWithError(w, "Invalid request", http.StatusBadRequest)
 		}
 	default:
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		respondWithError(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
 }
 
@@ -61,13 +61,13 @@ func (h *MenuHandler) AddMenuItem(w http.ResponseWriter, r *http.Request) {
 
 	if err := json.NewDecoder(r.Body).Decode(&item); err != nil {
 		slog.Error("Error decoding request body", slog.Any("error", err))
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		respondWithError(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	if err := h.service.AddItem(&item); err != nil {
 		slog.Error("Error adding menu item", slog.Any("error", err))
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		respondWithError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -80,7 +80,7 @@ func (h *MenuHandler) GetAllMenuItems(w http.ResponseWriter, r *http.Request) {
 	items, err := h.service.GetAllItems()
 	if err != nil {
 		slog.Error("Error retrieving menu items", slog.Any("error", err))
-		http.Error(w, "Failed to retrieve menu items", http.StatusInternalServerError)
+		respondWithError(w, "Failed to retrieve menu items", http.StatusInternalServerError)
 		return
 	}
 
@@ -93,7 +93,7 @@ func (h *MenuHandler) GetMenuItem(w http.ResponseWriter, r *http.Request, id str
 	item, err := h.service.GetMenuItemByID(id)
 	if err != nil {
 		slog.Error("Error retrieving menu item", slog.String("itemID", id), slog.Any("error", err))
-		http.Error(w, err.Error(), http.StatusNotFound)
+		respondWithError(w, err.Error(), http.StatusNotFound)
 		return
 	}
 
@@ -106,7 +106,7 @@ func (h *MenuHandler) UpdateMenuItem(w http.ResponseWriter, r *http.Request, id 
 	var updatedItem models.MenuItem
 	if err := json.NewDecoder(r.Body).Decode(&updatedItem); err != nil {
 		slog.Error("Error decoding request body for update", slog.Any("error", err))
-		http.Error(w, "Invalid input", http.StatusBadRequest)
+		respondWithError(w, "Invalid input", http.StatusBadRequest)
 		return
 	}
 
@@ -114,7 +114,7 @@ func (h *MenuHandler) UpdateMenuItem(w http.ResponseWriter, r *http.Request, id 
 
 	if err := h.service.UpdateMenuItem(&updatedItem); err != nil {
 		slog.Error("Error updating menu item", slog.String("itemID", id), slog.Any("error", err))
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		respondWithError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -126,7 +126,7 @@ func (h *MenuHandler) UpdateMenuItem(w http.ResponseWriter, r *http.Request, id 
 func (h *MenuHandler) DeleteMenuItem(w http.ResponseWriter, r *http.Request, id string) {
 	if err := h.service.DeleteMenuItem(id); err != nil {
 		slog.Error("Error deleting menu item", slog.String("itemID", id), slog.Any("error", err))
-		http.Error(w, err.Error(), http.StatusNotFound)
+		respondWithError(w, err.Error(), http.StatusNotFound)
 		return
 	}
 

@@ -18,6 +18,13 @@ func NewInventoryHandler(service *service.InventoryService) *InventoryHandler {
 	return &InventoryHandler{service: service}
 }
 
+// respondWithError formats an error message in JSON format and writes it to the response.
+func respondWithError(w http.ResponseWriter, message string, code int) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(code)
+	json.NewEncoder(w).Encode(map[string]string{"error": message})
+}
+
 func (h *InventoryHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	path := r.URL.Path
@@ -26,7 +33,7 @@ func (h *InventoryHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case http.MethodPost:
 		if strings.HasPrefix(path, "/inventory/") {
 			slog.Error("Invalid POST request - unexpected URL path")
-			http.Error(w, "Invalid request", http.StatusBadRequest)
+			respondWithError(w, "Invalid request", http.StatusBadRequest)
 		} else {
 			h.AddInventoryItem(w, r)
 		}
@@ -45,7 +52,7 @@ func (h *InventoryHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			h.UpdateInventoryItem(w, r, id)
 		} else {
 			slog.Error("Invalid PUT request - unexpected URL path")
-			http.Error(w, "Invalid request", http.StatusBadRequest)
+			respondWithError(w, "Invalid request", http.StatusBadRequest)
 		}
 
 	case http.MethodDelete:
@@ -54,12 +61,12 @@ func (h *InventoryHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			h.DeleteInventoryItem(w, r, id)
 		} else {
 			slog.Error("Invalid DELETE request - unexpected URL path")
-			http.Error(w, "Invalid request", http.StatusBadRequest)
+			respondWithError(w, "Invalid request", http.StatusBadRequest)
 		}
 
 	default:
 		slog.Warn("Method not allowed", "method", r.Method)
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		respondWithError(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
 }
 
@@ -67,7 +74,7 @@ func (h *InventoryHandler) DeleteInventoryItem(w http.ResponseWriter, r *http.Re
 	slog.Info("Deleting inventory item", "id", id)
 	if err := h.service.DeleteItem(id); err != nil {
 		slog.Error("Error deleting inventory item", "id", id, "error", err)
-		http.Error(w, err.Error(), http.StatusNotFound)
+		respondWithError(w, err.Error(), http.StatusNotFound)
 		return
 	}
 	slog.Info("Inventory item deleted", "id", id)
@@ -80,13 +87,13 @@ func (h *InventoryHandler) AddInventoryItem(w http.ResponseWriter, r *http.Reque
 	slog.Info("Decoding JSON for new inventory item")
 	if err := json.NewDecoder(r.Body).Decode(&item); err != nil {
 		slog.Error("Error decoding JSON", "error", err)
-		http.Error(w, "Invalid input", http.StatusBadRequest)
+		respondWithError(w, "Invalid input", http.StatusBadRequest)
 		return
 	}
 
 	if err := h.service.AddItem(&item); err != nil {
 		slog.Error("Error adding inventory item", "error", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		respondWithError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -100,7 +107,7 @@ func (h *InventoryHandler) GetInventoryItem(w http.ResponseWriter, r *http.Reque
 	item, err := h.service.GetItemByID(id)
 	if err != nil {
 		slog.Error("Error retrieving inventory item", "id", id, "error", err)
-		http.Error(w, err.Error(), http.StatusNotFound)
+		respondWithError(w, err.Error(), http.StatusNotFound)
 		return
 	}
 
@@ -115,14 +122,14 @@ func (h *InventoryHandler) UpdateInventoryItem(w http.ResponseWriter, r *http.Re
 	slog.Info("Updating inventory item", "id", id)
 	if err := json.NewDecoder(r.Body).Decode(&updatedItem); err != nil {
 		slog.Error("Error decoding JSON", "error", err)
-		http.Error(w, "Invalid input", http.StatusBadRequest)
+		respondWithError(w, "Invalid input", http.StatusBadRequest)
 		return
 	}
 
 	updatedItem.IngredientID = id
 	if err := h.service.UpdateItem(&updatedItem); err != nil {
 		slog.Error("Error updating inventory item", "id", id, "error", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		respondWithError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -136,7 +143,7 @@ func (h *InventoryHandler) GetAllInventoryItems(w http.ResponseWriter, r *http.R
 	items, err := h.service.GetAllItems()
 	if err != nil {
 		slog.Error("Error retrieving all items", "error", err)
-		http.Error(w, "Failed to retrieve inventory items", http.StatusInternalServerError)
+		respondWithError(w, "Failed to retrieve inventory items", http.StatusInternalServerError)
 		return
 	}
 
