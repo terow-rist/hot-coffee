@@ -2,12 +2,12 @@ package handler
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 	"strings"
 
 	"hot-coffee/internal/service"
 	"hot-coffee/models"
+	"log/slog"
 )
 
 type InventoryHandler struct {
@@ -21,11 +21,11 @@ func NewInventoryHandler(service *service.InventoryService) *InventoryHandler {
 func (h *InventoryHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	path := r.URL.Path
-	log.Printf("Received %s request at %s", r.Method, path)
+	slog.Info("Request received", "method", r.Method, "path", path)
 	switch r.Method {
 	case http.MethodPost:
 		if strings.HasPrefix(path, "/inventory/") {
-			log.Println("Invalid POST request - unexpected URL path")
+			slog.Error("Invalid POST request - unexpected URL path")
 			http.Error(w, "Invalid request", http.StatusBadRequest)
 		} else {
 			h.AddInventoryItem(w, r)
@@ -33,83 +33,78 @@ func (h *InventoryHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	case http.MethodGet:
 		if strings.HasPrefix(path, "/inventory/") {
-			// Extract the ID from the URL
 			id := strings.TrimPrefix(path, "/inventory/")
-			h.GetInventoryItem(w, r, id) // Pass the ID to the handler
+			h.GetInventoryItem(w, r, id)
 		} else {
 			h.GetAllInventoryItems(w, r)
 		}
 
 	case http.MethodPut:
 		if strings.HasPrefix(path, "/inventory/") {
-			// Extract the ID from the URL
 			id := strings.TrimPrefix(path, "/inventory/")
-			h.UpdateInventoryItem(w, r, id) // Pass the ID to the handler
+			h.UpdateInventoryItem(w, r, id)
 		} else {
-			log.Println("Invalid PUT request - unexpected URL path")
+			slog.Error("Invalid PUT request - unexpected URL path")
 			http.Error(w, "Invalid request", http.StatusBadRequest)
 		}
 
 	case http.MethodDelete:
 		if strings.HasPrefix(path, "/inventory/") {
-			// Extract the ID from the URL
 			id := strings.TrimPrefix(path, "/inventory/")
-			h.DeleteInventoryItem(w, r, id) // Pass the ID to the handler
+			h.DeleteInventoryItem(w, r, id)
 		} else {
-			log.Println("Invalid DELETE request - unexpected URL path")
+			slog.Error("Invalid DELETE request - unexpected URL path")
 			http.Error(w, "Invalid request", http.StatusBadRequest)
 		}
 
 	default:
-		log.Printf("Method %s not allowed", r.Method)
+		slog.Warn("Method not allowed", "method", r.Method)
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
 }
 
 func (h *InventoryHandler) DeleteInventoryItem(w http.ResponseWriter, r *http.Request, id string) {
-	log.Printf("Attempting to delete item with ID %s", id)
+	slog.Info("Deleting inventory item", "id", id)
 	if err := h.service.DeleteItem(id); err != nil {
-		log.Printf("Error deleting item with ID %s: %v", id, err)
+		slog.Error("Error deleting inventory item", "id", id, "error", err)
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
-	log.Printf("Item with ID %s successfully deleted", id)
-	w.WriteHeader(http.StatusNoContent) // No content response for successful deletion
+	slog.Info("Inventory item deleted", "id", id)
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (h *InventoryHandler) AddInventoryItem(w http.ResponseWriter, r *http.Request) {
 	var item models.InventoryItem
 
-	// Decode the incoming JSON
-	log.Println("Decoding JSON for new inventory item")
+	slog.Info("Decoding JSON for new inventory item")
 	if err := json.NewDecoder(r.Body).Decode(&item); err != nil {
-		log.Printf("Error decoding JSON: %v", err)
+		slog.Error("Error decoding JSON", "error", err)
 		http.Error(w, "Invalid input", http.StatusBadRequest)
 		return
 	}
 
-	// Call the service to add the item
 	if err := h.service.AddItem(&item); err != nil {
-		log.Printf("Error adding inventory item: %v", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError) // Return the actual error message
+		slog.Error("Error adding inventory item", "error", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	log.Printf("Inventory item with ID %s successfully added", item.IngredientID)
+	slog.Info("Inventory item added", "id", item.IngredientID)
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(item)
 }
 
 func (h *InventoryHandler) GetInventoryItem(w http.ResponseWriter, r *http.Request, id string) {
-	log.Printf("Retrieving item with ID %s", id)
+	slog.Info("Retrieving inventory item", "id", id)
 	item, err := h.service.GetItemByID(id)
 	if err != nil {
-		log.Printf("Error retrieving item with ID %s: %v", id, err)
+		slog.Error("Error retrieving inventory item", "id", id, "error", err)
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
 
-	log.Printf("Item with ID %s retrieved successfully", id)
+	slog.Info("Inventory item retrieved", "id", id)
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(item)
 }
@@ -117,39 +112,35 @@ func (h *InventoryHandler) GetInventoryItem(w http.ResponseWriter, r *http.Reque
 func (h *InventoryHandler) UpdateInventoryItem(w http.ResponseWriter, r *http.Request, id string) {
 	var updatedItem models.InventoryItem
 
-	log.Printf("Updating item with ID %s", id)
+	slog.Info("Updating inventory item", "id", id)
 	if err := json.NewDecoder(r.Body).Decode(&updatedItem); err != nil {
-		log.Printf("Error decoding JSON: %v", err)
+		slog.Error("Error decoding JSON", "error", err)
 		http.Error(w, "Invalid input", http.StatusBadRequest)
 		return
 	}
 
-	// Ensure the ID is set correctly
-	updatedItem.IngredientID = id // Use the ID from the URL
-
-	// Call the existing UpdateItem method in the service
+	updatedItem.IngredientID = id
 	if err := h.service.UpdateItem(&updatedItem); err != nil {
-		log.Printf("Error updating item with ID %s: %v", id, err)
+		slog.Error("Error updating inventory item", "id", id, "error", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	log.Printf("Item with ID %s successfully updated", id)
+	slog.Info("Inventory item updated", "id", id)
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(updatedItem)
 }
 
 func (h *InventoryHandler) GetAllInventoryItems(w http.ResponseWriter, r *http.Request) {
-	// Call the service to get all items
-	log.Println("Retrieving all inventory items")
-	items, err := h.service.GetAllItems() // Using the service method here
+	slog.Info("Retrieving all inventory items")
+	items, err := h.service.GetAllItems()
 	if err != nil {
-		log.Printf("Error retrieving all items: %v", err)
+		slog.Error("Error retrieving all items", "error", err)
 		http.Error(w, "Failed to retrieve inventory items", http.StatusInternalServerError)
 		return
 	}
 
-	log.Printf("Retrieved %d inventory items", len(items))
-	w.WriteHeader(http.StatusOK)     // Set the response status code
-	json.NewEncoder(w).Encode(items) // Encode and return the items in JSON format
+	slog.Info("Inventory items retrieved", "count", len(items))
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(items)
 }

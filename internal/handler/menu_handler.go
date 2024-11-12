@@ -2,7 +2,7 @@ package handler
 
 import (
 	"encoding/json"
-	"log"
+	"log/slog"
 	"net/http"
 	"strings"
 
@@ -21,7 +21,7 @@ func NewMenuHandler(service *service.MenuService) *MenuHandler {
 func (h *MenuHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	path := r.URL.Path
-	log.Printf("Received %s request at %s", r.Method, path)
+	slog.Info("Received request", slog.String("method", r.Method), slog.String("path", path))
 
 	switch r.Method {
 	case http.MethodPost:
@@ -60,17 +60,18 @@ func (h *MenuHandler) AddMenuItem(w http.ResponseWriter, r *http.Request) {
 	var item models.MenuItem
 
 	if err := json.NewDecoder(r.Body).Decode(&item); err != nil {
-		log.Printf("Error decoding request body: %v", err)
+		slog.Error("Error decoding request body", slog.Any("error", err))
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	if err := h.service.AddItem(&item); err != nil {
-		log.Printf("Error adding menu item: %v", err)
+		slog.Error("Error adding menu item", slog.Any("error", err))
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
+	slog.Info("Menu item successfully added", slog.String("itemID", item.ID))
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(item)
 }
@@ -78,11 +79,12 @@ func (h *MenuHandler) AddMenuItem(w http.ResponseWriter, r *http.Request) {
 func (h *MenuHandler) GetAllMenuItems(w http.ResponseWriter, r *http.Request) {
 	items, err := h.service.GetAllItems()
 	if err != nil {
-		log.Printf("Error retrieving menu items: %v", err)
+		slog.Error("Error retrieving menu items", slog.Any("error", err))
 		http.Error(w, "Failed to retrieve menu items", http.StatusInternalServerError)
 		return
 	}
 
+	slog.Info("Retrieved all menu items", slog.Int("itemCount", len(items)))
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(items)
 }
@@ -90,11 +92,12 @@ func (h *MenuHandler) GetAllMenuItems(w http.ResponseWriter, r *http.Request) {
 func (h *MenuHandler) GetMenuItem(w http.ResponseWriter, r *http.Request, id string) {
 	item, err := h.service.GetMenuItemByID(id)
 	if err != nil {
-		log.Printf("Error retrieving menu item with ID %s: %v", id, err)
+		slog.Error("Error retrieving menu item", slog.String("itemID", id), slog.Any("error", err))
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
 
+	slog.Info("Menu item retrieved", slog.String("itemID", id))
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(item)
 }
@@ -102,7 +105,7 @@ func (h *MenuHandler) GetMenuItem(w http.ResponseWriter, r *http.Request, id str
 func (h *MenuHandler) UpdateMenuItem(w http.ResponseWriter, r *http.Request, id string) {
 	var updatedItem models.MenuItem
 	if err := json.NewDecoder(r.Body).Decode(&updatedItem); err != nil {
-		log.Printf("Error decoding request body for update: %v", err)
+		slog.Error("Error decoding request body for update", slog.Any("error", err))
 		http.Error(w, "Invalid input", http.StatusBadRequest)
 		return
 	}
@@ -110,21 +113,23 @@ func (h *MenuHandler) UpdateMenuItem(w http.ResponseWriter, r *http.Request, id 
 	updatedItem.ID = id
 
 	if err := h.service.UpdateMenuItem(&updatedItem); err != nil {
-		log.Printf("Error updating menu item with ID %s: %v", id, err)
+		slog.Error("Error updating menu item", slog.String("itemID", id), slog.Any("error", err))
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
+	slog.Info("Menu item updated successfully", slog.String("itemID", id))
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(updatedItem)
 }
 
 func (h *MenuHandler) DeleteMenuItem(w http.ResponseWriter, r *http.Request, id string) {
 	if err := h.service.DeleteMenuItem(id); err != nil {
-		log.Printf("Error deleting menu item with ID %s: %v", id, err)
+		slog.Error("Error deleting menu item", slog.String("itemID", id), slog.Any("error", err))
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
 
+	slog.Info("Menu item deleted", slog.String("itemID", id))
 	w.WriteHeader(http.StatusNoContent)
 }
