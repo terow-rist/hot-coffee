@@ -114,7 +114,7 @@ func (h *OrderHandler) UpdateOrder(w http.ResponseWriter, r *http.Request) {
 
 	// Call the service to save the updated order
 	if err := h.orderService.UpdateOrder(existingOrder); err != nil {
-		respondWithError(w, "Failed to update order", http.StatusInternalServerError)
+		respondWithError(w, "Failed to update order: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 

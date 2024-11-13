@@ -37,7 +37,10 @@ func (s *OrderService) UpdateOrder(order *models.Order) error {
 	if err != nil {
 		return errors.New("order not found")
 	}
-
+	// Restrict updates to closed orders
+	if existingOrder.Status == "closed" {
+		return errors.New("cannot update a closed order")
+	}
 	// Return previous quantities to the inventory
 	if err := s.returnInventoryForOrder(existingOrder); err != nil {
 		return err
