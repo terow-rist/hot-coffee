@@ -2,14 +2,29 @@ package main
 
 import (
 	"fmt"
+	"hot-coffee/config"
 	"hot-coffee/internal/dal"
 	"hot-coffee/internal/handler"
 	"hot-coffee/internal/service"
 	"net/http"
+	"os"
+	"strconv"
 )
 
 // ..
 func main() {
+	// Validate directory and port
+	if err := config.ValidateDirectory(); err != nil {
+		fmt.Printf("Error: %v\n", err)
+		os.Exit(1)
+	}
+	// Check if the port is valid
+	port, err := strconv.Atoi(config.PortNumber)
+	if err != nil || port <= 0 || port > 65535 {
+		fmt.Printf("Error: Invalid port number %s\n", config.PortNumber)
+		os.Exit(1)
+
+	}
 	inventoryRepo := &dal.FileInventoryRepository{}
 	menuRepo := &dal.FileMenuRepository{}
 	orderRepo := &dal.FileOrderRepository{}
@@ -36,8 +51,8 @@ func main() {
 	http.Handle("/reports/total-sales", reportsHandler)
 	http.Handle("/reports/popular-items", reportsHandler)
 
-	fmt.Println("Server is running on port 8080")
-	if err := http.ListenAndServe(":8080", nil); err != nil {
+	fmt.Println("Server is running on port " + config.PortNumber)
+	if err := http.ListenAndServe(":"+config.PortNumber, nil); err != nil {
 		fmt.Printf("Error starting server: %v\n", err)
 	}
 }

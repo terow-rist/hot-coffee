@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 
+	"hot-coffee/config"
 	"hot-coffee/models"
 )
 
@@ -41,7 +42,7 @@ func (r *FileInventoryRepository) AddItem(item *models.InventoryItem) error {
 // GetAllItems retrieves all inventory items from the repository.
 func (r *FileInventoryRepository) GetAllItems() ([]models.InventoryItem, error) {
 	var items []models.InventoryItem
-	file, err := os.Open("data/inventory.json")
+	file, err := os.Open(config.Directory + "/inventory.json")
 	if err != nil {
 		// If the file doesn't exist, return an empty slice without an error
 		if os.IsNotExist(err) {
@@ -61,7 +62,7 @@ func (r *FileInventoryRepository) GetAllItems() ([]models.InventoryItem, error) 
 
 // saveItems saves the inventory items to the JSON file.
 func (r *FileInventoryRepository) saveItems(items []models.InventoryItem) error {
-	file, err := os.OpenFile("data/inventory.json", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o644)
+	file, err := os.OpenFile(config.Directory+"/inventory.json", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o644)
 	if err != nil {
 		return err
 	}
@@ -81,7 +82,7 @@ func (r *FileInventoryRepository) AddInventory(ingredientID string, quantity flo
 	var inventoryItems []models.InventoryItem
 
 	// Open inventory.json and decode it
-	file, err := os.OpenFile("data/inventory.json", os.O_RDWR, 0644)
+	file, err := os.OpenFile(config.Directory+"/inventory.json", os.O_RDWR, 0644)
 	if err != nil {
 		return err
 	}
