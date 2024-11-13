@@ -56,6 +56,7 @@ func (h *OrderHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (h *OrderHandler) CreateOrder(w http.ResponseWriter, r *http.Request) {
 	var order models.Order
 	if err := json.NewDecoder(r.Body).Decode(&order); err != nil {
+		slog.Error("Failed to decode order", slog.String("error", err.Error()))
 		respondWithError(w, "Invalid input", http.StatusBadRequest)
 		return
 	}
@@ -64,32 +65,35 @@ func (h *OrderHandler) CreateOrder(w http.ResponseWriter, r *http.Request) {
 	order.CreatedAt = time.Now().Format(time.RFC3339)
 
 	if err := h.orderService.CreateOrder(&order); err != nil {
+		slog.Error("Failed to create order", slog.String("error", err.Error()))
 		respondWithError(w, err.Error(), http.StatusNotFound)
 		return
 	}
 
+	slog.Info("Order created successfully", slog.String("orderID", order.ID))
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(order)
 }
 
 func (h *OrderHandler) CloseOrder(w http.ResponseWriter, r *http.Request) {
-	// Extract the order ID from the URL, removing "/close" suffix
 	orderID := strings.TrimPrefix(strings.TrimSuffix(r.URL.Path, "/close"), "/orders/")
+	slog.Info("Closing order", slog.String("orderID", orderID))
 
-	// Attempt to close the order with the specified ID
 	if err := h.orderService.CloseOrder(orderID); err != nil {
+		slog.Error("Failed to close order", slog.String("orderID", orderID), slog.String("error", err.Error()))
 		respondWithError(w, err.Error(), http.StatusNotFound)
 		return
 	}
 
-	// Return a success response
+	slog.Info("Order closed successfully", slog.String("orderID", orderID))
 	respondWithJSON(w, map[string]string{"message": "Order closed successfully"}, http.StatusOK)
 }
 
-// / Handle GET /orders
 func (h *OrderHandler) GetAllOrders(w http.ResponseWriter, r *http.Request) {
+	slog.Info("Fetching all orders")
 	orders, err := h.orderService.GetAllOrders()
 	if err != nil {
+		slog.Error("Failed to retrieve orders", slog.String("error", err.Error()))
 		http.Error(w, "Failed to retrieve orders", http.StatusInternalServerError)
 		return
 	}
@@ -98,9 +102,11 @@ func (h *OrderHandler) GetAllOrders(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *OrderHandler) GetOrderByID(w http.ResponseWriter, r *http.Request) {
-	id := strings.TrimPrefix(r.URL.Path, "/orders/") // Extract the ID from the URL path
+	id := strings.TrimPrefix(r.URL.Path, "/orders/")
+	slog.Info("Fetching order by ID", slog.String("orderID", id))
 	order, err := h.orderService.GetOrderByID(id)
 	if err != nil {
+		slog.Error("Order not found", slog.String("orderID", id))
 		respondWithError(w, "Order not found", http.StatusNotFound)
 		return
 	}
@@ -110,8 +116,10 @@ func (h *OrderHandler) GetOrderByID(w http.ResponseWriter, r *http.Request) {
 
 func (h *OrderHandler) DeleteOrder(w http.ResponseWriter, r *http.Request) {
 	orderID := strings.TrimPrefix(r.URL.Path, "/orders/")
+	slog.Info("Deleting order", slog.String("orderID", orderID))
 
 	if err := h.orderService.DeleteOrder(orderID); err != nil {
+		slog.Error("Failed to delete order", slog.String("orderID", orderID), slog.String("error", err.Error()))
 		if err.Error() == "order not found" {
 			respondWithError(w, "Order not found", http.StatusNotFound)
 		} else {
@@ -120,27 +128,28 @@ func (h *OrderHandler) DeleteOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	slog.Info("Order deleted successfully", slog.String("orderID", orderID))
 	respondWithJSON(w, "Order deleted successfully", http.StatusNoContent)
 }
 
 func (h *OrderHandler) UpdateOrder(w http.ResponseWriter, r *http.Request) {
 	orderID := strings.TrimPrefix(r.URL.Path, "/orders/")
 	var updatedOrder models.Order
+	slog.Info("Updating order", slog.String("orderID", orderID))
 
-	// Decode the incoming JSON into the updatedOrder struct
 	if err := json.NewDecoder(r.Body).Decode(&updatedOrder); err != nil {
+		slog.Error("Failed to decode update data", slog.String("error", err.Error()))
 		respondWithError(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	// Validate that the order exists
 	existingOrder, err := h.orderService.GetOrderByID(orderID)
 	if err != nil {
+		slog.Error("Order not found", slog.String("orderID", orderID))
 		respondWithError(w, "Order not found", http.StatusNotFound)
 		return
 	}
 
-	// Only update the fields that are provided in the request body (not empty)
 	if updatedOrder.CustomerName != "" {
 		existingOrder.CustomerName = updatedOrder.CustomerName
 	}
@@ -148,16 +157,15 @@ func (h *OrderHandler) UpdateOrder(w http.ResponseWriter, r *http.Request) {
 		existingOrder.Items = updatedOrder.Items
 	}
 
-	// Automatically set the CreatedAt to the current time
 	existingOrder.CreatedAt = time.Now().Format(time.RFC3339)
 
-	// Call the service to save the updated order
 	if err := h.orderService.UpdateOrder(existingOrder); err != nil {
+		slog.Error("Failed to update order", slog.String("orderID", orderID), slog.String("error", err.Error()))
 		respondWithError(w, "Failed to update order: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	// Respond with the updated order
+	slog.Info("Order updated successfully", slog.String("orderID", orderID))
 	respondWithJSON(w, existingOrder, http.StatusOK)
 }
 
