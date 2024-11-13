@@ -71,6 +71,10 @@ func (r *FileOrderRepository) UpdateOrder(order *models.Order) error {
 		return err
 	}
 
+	// Check that all item quantities in the updated order are non-negative
+	if err := r.CheckNonNegativeQuantities(order); err != nil {
+		return err
+	}
 	// Find the order to update by ID
 	var updated bool
 	for i, o := range orders {
@@ -97,6 +101,16 @@ func (r *FileOrderRepository) UpdateOrder(order *models.Order) error {
 
 	// Save the updated list of orders back to the file, only modified orders
 	return r.SaveOrders(orders)
+}
+
+// CheckNonNegativeQuantities checks that all item quantities in an order are non-negative.
+func (r *FileOrderRepository) CheckNonNegativeQuantities(order *models.Order) error {
+	for _, item := range order.Items {
+		if item.Quantity < 0 {
+			return fmt.Errorf("quantity for item %s is less than zero", item.ProductID)
+		}
+	}
+	return nil
 }
 
 func (r *FileOrderRepository) LoadOrders() ([]models.Order, error) {

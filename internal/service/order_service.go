@@ -12,6 +12,8 @@ type OrderRepository interface {
 	GetOrderByID(id string) (*models.Order, error)
 	UpdateOrder(order *models.Order) error
 	DeleteOrder(orderID string) error
+	LoadOrders() ([]models.Order, error)
+	SaveOrders(orders []models.Order) error
 }
 
 type OrderService struct {
@@ -57,6 +59,38 @@ func (s *OrderService) UpdateOrder(order *models.Order) error {
 
 	// Save the updated order
 	return s.orderRepo.UpdateOrder(order)
+}
+
+func (s *OrderService) CloseOrder(orderID string) error {
+	// Load all orders
+	orders, err := s.orderRepo.LoadOrders()
+	if err != nil {
+		return errors.New("failed to load orders")
+	}
+
+	// Flag to track if the order was found and updated
+	orderFound := false
+
+	// Walk through the orders and update the status if ID matches
+	for i, order := range orders {
+		if order.ID == orderID {
+			if orders[i].Status == "closed" {
+				return errors.New("Order is already closed.")
+			}
+			// Update the status to "closed"
+			orders[i].Status = "closed"
+			orderFound = true
+			break
+		}
+	}
+
+	// If order not found, return an error
+	if !orderFound {
+		return errors.New("order not found")
+	}
+
+	// Save the updated orders list back to the repository
+	return s.orderRepo.SaveOrders(orders)
 }
 
 func (s *OrderService) CreateOrder(order *models.Order) error {

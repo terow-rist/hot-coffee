@@ -25,7 +25,11 @@ func (h *OrderHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case http.MethodPost:
-		h.CreateOrder(w, r)
+		if strings.HasSuffix(path, "/close") {
+			h.CloseOrder(w, r)
+		} else {
+			h.CreateOrder(w, r)
+		}
 	case http.MethodGet:
 		if strings.HasPrefix(path, "/orders/") {
 			h.GetOrderByID(w, r)
@@ -66,6 +70,20 @@ func (h *OrderHandler) CreateOrder(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(order)
+}
+
+func (h *OrderHandler) CloseOrder(w http.ResponseWriter, r *http.Request) {
+	// Extract the order ID from the URL, removing "/close" suffix
+	orderID := strings.TrimPrefix(strings.TrimSuffix(r.URL.Path, "/close"), "/orders/")
+
+	// Attempt to close the order with the specified ID
+	if err := h.orderService.CloseOrder(orderID); err != nil {
+		respondWithError(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	// Return a success response
+	respondWithJSON(w, map[string]string{"message": "Order closed successfully"}, http.StatusOK)
 }
 
 // / Handle GET /orders
