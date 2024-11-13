@@ -2,6 +2,7 @@ package dal
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 
@@ -12,6 +13,7 @@ type InventoryRepository interface {
 	AddItem(item *models.InventoryItem) error
 	GetAllItems() ([]models.InventoryItem, error)
 	SaveItems(items []models.InventoryItem) error
+	AddInventory(ingredientID string, quantity float64) error
 }
 
 type FileInventoryRepository struct{}
@@ -73,4 +75,41 @@ func (r *FileInventoryRepository) saveItems(items []models.InventoryItem) error 
 
 func (r *FileInventoryRepository) SaveItems(items []models.InventoryItem) error {
 	return r.saveItems(items)
+}
+
+func (r *FileInventoryRepository) AddInventory(ingredientID string, quantity float64) error {
+	var inventoryItems []models.InventoryItem
+
+	// Open inventory.json and decode it
+	file, err := os.OpenFile("data/inventory.json", os.O_RDWR, 0644)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	if err := json.NewDecoder(file).Decode(&inventoryItems); err != nil {
+		return err
+	}
+
+	// Track if we updated any item
+	itemFound := false
+
+	// Find the item by ID and add the quantity
+	for i, item := range inventoryItems {
+		if item.IngredientID == ingredientID {
+			inventoryItems[i].Quantity += quantity
+			itemFound = true
+			break
+		}
+	}
+
+	// If no matching ingredient was found, return an error
+	if !itemFound {
+		return errors.New("ingredient not found in inventory")
+	}
+
+	// Write the updated inventory back to the file
+	file.Seek(0, 0)
+	file.Truncate(0) // Clear existing data
+	return json.NewEncoder(file).Encode(inventoryItems)
 }

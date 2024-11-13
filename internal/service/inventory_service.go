@@ -9,7 +9,7 @@ type InventoryRepository interface {
 	AddItem(item *models.InventoryItem) error
 	GetAllItems() ([]models.InventoryItem, error)
 	SaveItems(items []models.InventoryItem) error // Add this line
-
+	AddInventory(ingredientID string, quantity float64) error
 	// Add other methods as needed
 }
 
@@ -28,6 +28,9 @@ func (s *InventoryService) AddItem(item *models.InventoryItem) error {
 // service/inventory_service.go
 func (s *InventoryService) GetAllItems() ([]models.InventoryItem, error) {
 	return s.repo.GetAllItems()
+}
+func (s *InventoryService) AddInventory(ingredientID string, quantity float64) error {
+	return s.repo.AddInventory(ingredientID, quantity)
 }
 
 // service/inventory_service.go
