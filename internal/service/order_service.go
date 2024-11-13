@@ -10,6 +10,7 @@ type OrderRepository interface {
 	SaveOrder(order *models.Order) error // Add this line
 	GetAllOrders() ([]models.Order, error)
 	GetOrderByID(id string) (*models.Order, error)
+	UpdateOrder(order *models.Order) error
 }
 
 type OrderService struct {
@@ -28,6 +29,10 @@ func (s *OrderService) GetAllOrders() ([]models.Order, error) {
 
 func (s *OrderService) GetOrderByID(id string) (*models.Order, error) {
 	return s.orderRepo.GetOrderByID(id)
+}
+
+func (s *OrderService) UpdateOrder(order *models.Order) error {
+	return s.orderRepo.UpdateOrder(order)
 }
 
 func (s *OrderService) CreateOrder(order *models.Order) error {

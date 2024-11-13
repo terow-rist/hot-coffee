@@ -3,6 +3,7 @@ package dal
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"hot-coffee/models"
 	"os"
 )
@@ -11,6 +12,7 @@ type OrderRepository interface {
 	SaveOrder(order *models.Order) error
 	GetAllOrders() ([]models.Order, error)
 	GetOrderByID(id string) (*models.Order, error)
+	UpdateOrder(order *models.Order) error
 }
 
 type FileOrderRepository struct{}
@@ -60,4 +62,71 @@ func (r *FileOrderRepository) GetOrderByID(id string) (*models.Order, error) {
 		}
 	}
 	return nil, errors.New("order not found")
+}
+
+func (r *FileOrderRepository) UpdateOrder(order *models.Order) error {
+	// Load the existing orders from the file
+	orders, err := r.LoadOrders()
+	if err != nil {
+		return err
+	}
+
+	// Find the order to update by ID
+	var updated bool
+	for i, o := range orders {
+		if o.ID == order.ID {
+			// Update only the specified fields
+			if order.CustomerName != "" {
+				orders[i].CustomerName = order.CustomerName
+			}
+			if len(order.Items) > 0 {
+				orders[i].Items = order.Items
+			}
+			if order.CreatedAt != "" { // Check if CreatedAt is set (not empty string)
+				orders[i].CreatedAt = order.CreatedAt
+			}
+			updated = true
+			break
+		}
+	}
+
+	// If no order found with the given ID, return an error
+	if !updated {
+		return fmt.Errorf("order not found")
+	}
+
+	// Save the updated list of orders back to the file, only modified orders
+	return r.SaveOrders(orders)
+}
+
+func (r *FileOrderRepository) LoadOrders() ([]models.Order, error) {
+	var orders []models.Order
+
+	file, err := os.Open("data/orders.json")
+	if err != nil {
+		// If the file does not exist, return an empty slice (this is valid)
+		if os.IsNotExist(err) {
+			return orders, nil
+		}
+		return nil, err
+	}
+	defer file.Close()
+
+	err = json.NewDecoder(file).Decode(&orders)
+	if err != nil {
+		return nil, err
+	}
+
+	return orders, nil
+}
+
+func (r *FileOrderRepository) SaveOrders(orders []models.Order) error {
+	file, err := os.OpenFile("data/orders.json", os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	// Write the updated orders to the file
+	return json.NewEncoder(file).Encode(orders)
 }

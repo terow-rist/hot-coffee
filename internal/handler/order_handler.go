@@ -27,19 +27,20 @@ func (h *OrderHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case http.MethodPost:
 		h.CreateOrder(w, r)
 	case http.MethodGet:
-		// Handle request for all orders
-		if path == "/orders" {
-			h.GetAllOrders(w, r)
-		} else if strings.HasPrefix(path, "/orders/") {
-			// Handle request for a specific order by ID
+		if strings.HasPrefix(path, "/orders/") {
 			h.GetOrderByID(w, r)
+		} else {
+			h.GetAllOrders(w, r)
+		}
+	case http.MethodPut:
+		if strings.HasPrefix(path, "/orders/") {
+			h.UpdateOrder(w, r)
 		} else {
 			respondWithError(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
 	default:
 		respondWithError(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
-
 }
 
 func (h *OrderHandler) CreateOrder(w http.ResponseWriter, r *http.Request) {
@@ -81,4 +82,47 @@ func (h *OrderHandler) GetOrderByID(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(order)
+}
+
+func (h *OrderHandler) UpdateOrder(w http.ResponseWriter, r *http.Request) {
+	orderID := strings.TrimPrefix(r.URL.Path, "/orders/")
+	var updatedOrder models.Order
+
+	// Decode the incoming JSON into the updatedOrder struct
+	if err := json.NewDecoder(r.Body).Decode(&updatedOrder); err != nil {
+		respondWithError(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	// Validate that the order exists
+	existingOrder, err := h.orderService.GetOrderByID(orderID)
+	if err != nil {
+		respondWithError(w, "Order not found", http.StatusNotFound)
+		return
+	}
+
+	// Only update the fields that are provided in the request body (not empty)
+	if updatedOrder.CustomerName != "" {
+		existingOrder.CustomerName = updatedOrder.CustomerName
+	}
+	if len(updatedOrder.Items) > 0 {
+		existingOrder.Items = updatedOrder.Items
+	}
+
+	// Automatically set the CreatedAt to the current time
+	existingOrder.CreatedAt = time.Now().Format(time.RFC3339)
+
+	// Call the service to save the updated order
+	if err := h.orderService.UpdateOrder(existingOrder); err != nil {
+		respondWithError(w, "Failed to update order", http.StatusInternalServerError)
+		return
+	}
+
+	// Respond with the updated order
+	respondWithJSON(w, existingOrder, http.StatusOK)
+}
+
+func respondWithJSON(w http.ResponseWriter, data interface{}, statusCode int) {
+	w.WriteHeader(statusCode)
+	json.NewEncoder(w).Encode(data)
 }
