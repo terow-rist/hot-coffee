@@ -60,7 +60,7 @@ func (h *OrderHandler) CreateOrder(w http.ResponseWriter, r *http.Request) {
 	order.CreatedAt = time.Now().Format(time.RFC3339)
 
 	if err := h.orderService.CreateOrder(&order); err != nil {
-		respondWithError(w, err.Error(), http.StatusInternalServerError)
+		respondWithError(w, err.Error(), http.StatusNotFound)
 		return
 	}
 
