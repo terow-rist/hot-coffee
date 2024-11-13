@@ -38,6 +38,12 @@ func (h *OrderHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		} else {
 			respondWithError(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
+	case http.MethodDelete:
+		if strings.HasPrefix(path, "/orders/") {
+			h.DeleteOrder(w, r)
+		} else {
+			respondWithError(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
 	default:
 		respondWithError(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
@@ -82,6 +88,21 @@ func (h *OrderHandler) GetOrderByID(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(order)
+}
+
+func (h *OrderHandler) DeleteOrder(w http.ResponseWriter, r *http.Request) {
+	orderID := strings.TrimPrefix(r.URL.Path, "/orders/")
+
+	if err := h.orderService.DeleteOrder(orderID); err != nil {
+		if err.Error() == "order not found" {
+			respondWithError(w, "Order not found", http.StatusNotFound)
+		} else {
+			respondWithError(w, "Failed to delete order", http.StatusInternalServerError)
+		}
+		return
+	}
+
+	respondWithJSON(w, "Order deleted successfully", http.StatusNoContent)
 }
 
 func (h *OrderHandler) UpdateOrder(w http.ResponseWriter, r *http.Request) {

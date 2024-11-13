@@ -11,6 +11,7 @@ type OrderRepository interface {
 	GetAllOrders() ([]models.Order, error)
 	GetOrderByID(id string) (*models.Order, error)
 	UpdateOrder(order *models.Order) error
+	DeleteOrder(orderID string) error
 }
 
 type OrderService struct {
@@ -70,6 +71,31 @@ func (s *OrderService) CreateOrder(order *models.Order) error {
 
 	// Save order
 	return s.orderRepo.SaveOrder(order)
+}
+
+func (s *OrderService) DeleteOrder(orderID string) error {
+	// Retrieve the order to check if it exists and for possible inventory adjustments
+	existingOrder, err := s.orderRepo.GetOrderByID(orderID)
+	if err != nil {
+		return errors.New("order not found")
+	}
+
+	// Adjust inventory quantities before deletion
+	for _, item := range existingOrder.Items {
+		menuItem, err := s.menuService.GetMenuItemByID(item.ProductID)
+		if err != nil {
+			return err
+		}
+		for _, ingredient := range menuItem.Ingredients {
+			quantityToAdd := ingredient.Quantity * float64(item.Quantity)
+			if err := s.inventoryService.AddInventory(ingredient.IngredientID, quantityToAdd); err != nil {
+				return err
+			}
+		}
+	}
+
+	// Delete the order
+	return s.orderRepo.DeleteOrder(orderID)
 }
 
 func (s *OrderService) checkAndDeductInventoryForOrder(order *models.Order) error {

@@ -130,3 +130,32 @@ func (r *FileOrderRepository) SaveOrders(orders []models.Order) error {
 	// Write the updated orders to the file
 	return json.NewEncoder(file).Encode(orders)
 }
+
+func (r *FileOrderRepository) DeleteOrder(orderID string) error {
+	orders, err := r.GetAllOrders()
+	if err != nil {
+		return err
+	}
+
+	// Filter out the order to delete
+	var updatedOrders []models.Order
+	for _, order := range orders {
+		if order.ID != orderID {
+			updatedOrders = append(updatedOrders, order)
+		}
+	}
+
+	// Check if order was found
+	if len(orders) == len(updatedOrders) {
+		return errors.New("order not found")
+	}
+
+	// Write the updated orders back to file
+	file, err := os.OpenFile("data/orders.json", os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	return json.NewEncoder(file).Encode(updatedOrders)
+}
