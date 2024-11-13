@@ -27,7 +27,8 @@ func main() {
 	http.Handle("/inventory/", inventoryHandler)
 	http.Handle("/menu", menuHandler)
 	http.Handle("/menu/", menuHandler)
-	http.Handle("/order", orderHandler)
+	http.Handle("/orders", orderHandler)
+	http.Handle("/orders/", orderHandler)
 
 	fmt.Println("Server is running on port 8080")
 	if err := http.ListenAndServe(":8080", nil); err != nil {
