@@ -104,7 +104,7 @@ func (h *InventoryHandler) AddInventoryItem(w http.ResponseWriter, r *http.Reque
 
 func (h *InventoryHandler) GetInventoryItem(w http.ResponseWriter, r *http.Request, id string) {
 	slog.Info("Retrieving inventory item", "id", id)
-	item, err := h.service.GetItemByID(id)
+	item, err := h.service.GetInventoryItemByID(id)
 	if err != nil {
 		slog.Error("Error retrieving inventory item", "id", id, "error", err)
 		respondWithError(w, err.Error(), http.StatusNotFound)

@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"hot-coffee/models"
 )
 
@@ -31,7 +32,7 @@ func (s *InventoryService) GetAllItems() ([]models.InventoryItem, error) {
 
 // service/inventory_service.go
 
-func (s *InventoryService) GetItemByID(id string) (*models.InventoryItem, error) {
+func (s *InventoryService) GetInventoryItemByID(id string) (*models.InventoryItem, error) {
 	items, err := s.repo.GetAllItems()
 	if err != nil {
 		return nil, err
@@ -80,4 +81,26 @@ func (s *InventoryService) DeleteItem(id string) error {
 	}
 
 	return models.ErrItemNotFound // Return error if the item is not found
+}
+
+func (s *InventoryService) DeductInventory(ingredientID string, quantity float64) error {
+	// Get all inventory items
+	items, err := s.repo.GetAllItems()
+	if err != nil {
+		return err
+	}
+
+	// Find the ingredient in the inventory and deduct the quantity
+	for i, item := range items {
+		if item.IngredientID == ingredientID {
+			if item.Quantity < quantity {
+				return fmt.Errorf("insufficient quantity of ingredient %s", ingredientID)
+			}
+			items[i].Quantity -= quantity
+			break
+		}
+	}
+
+	// Save the updated inventory back to the file
+	return s.repo.SaveItems(items)
 }
