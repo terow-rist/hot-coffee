@@ -17,7 +17,9 @@ func main() {
 	inventoryService := service.NewInventoryService(inventoryRepo)
 	menuService := service.NewMenuService(menuRepo)
 	orderService := service.NewOrderService(orderRepo, *menuService, *inventoryService)
+	reportsService := service.NewReportsService(orderRepo, *menuService)
 
+	reportsHandler := handler.NewReportsHandler(reportsService)
 	inventoryHandler := handler.NewInventoryHandler(inventoryService)
 	menuHandler := handler.NewMenuHandler(menuService)
 	orderHandler := handler.NewOrderHandler(orderService)
@@ -29,6 +31,10 @@ func main() {
 	http.Handle("/menu/", menuHandler)
 	http.Handle("/orders", orderHandler)
 	http.Handle("/orders/", orderHandler)
+
+	// Register the new report routes
+	http.Handle("/reports/total-sales", reportsHandler)
+	http.Handle("/reports/popular-items", reportsHandler)
 
 	fmt.Println("Server is running on port 8080")
 	if err := http.ListenAndServe(":8080", nil); err != nil {
