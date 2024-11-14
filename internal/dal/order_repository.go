@@ -21,7 +21,7 @@ type FileOrderRepository struct{}
 func (repo *FileOrderRepository) SaveOrder(order *models.Order) error {
 	var orders []models.Order
 
-	file, err := os.OpenFile(config.Directory+"/orders.json", os.O_RDWR|os.O_CREATE, 0644)
+	file, err := os.OpenFile(config.Directory+"/orders.json", os.O_RDWR|os.O_CREATE, 0o644)
 	if err != nil {
 		return err
 	}
@@ -136,7 +136,7 @@ func (r *FileOrderRepository) LoadOrders() ([]models.Order, error) {
 }
 
 func (r *FileOrderRepository) SaveOrders(orders []models.Order) error {
-	file, err := os.OpenFile(config.Directory+"/orders.json", os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
+	file, err := os.OpenFile(config.Directory+"/orders.json", os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0o644)
 	if err != nil {
 		return err
 	}
@@ -166,7 +166,7 @@ func (r *FileOrderRepository) DeleteOrder(orderID string) error {
 	}
 
 	// Write the updated orders back to file
-	file, err := os.OpenFile(config.Directory+"/orders.json", os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
+	file, err := os.OpenFile(config.Directory+"/orders.json", os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0o644)
 	if err != nil {
 		return err
 	}

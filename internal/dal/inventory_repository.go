@@ -4,10 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"os"
-
 	"hot-coffee/config"
 	"hot-coffee/models"
+	"os"
 )
 
 type InventoryRepository interface {
@@ -82,7 +81,7 @@ func (r *FileInventoryRepository) AddInventory(ingredientID string, quantity flo
 	var inventoryItems []models.InventoryItem
 
 	// Open inventory.json and decode it
-	file, err := os.OpenFile(config.Directory+"/inventory.json", os.O_RDWR, 0644)
+	file, err := os.OpenFile(config.Directory+"/inventory.json", os.O_RDWR, 0o644)
 	if err != nil {
 		return err
 	}

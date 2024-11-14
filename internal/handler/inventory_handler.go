@@ -2,12 +2,11 @@ package handler
 
 import (
 	"encoding/json"
-	"net/http"
-	"strings"
-
 	"hot-coffee/internal/service"
 	"hot-coffee/models"
 	"log/slog"
+	"net/http"
+	"strings"
 )
 
 type InventoryHandler struct {

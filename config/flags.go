@@ -55,7 +55,7 @@ func ValidateDirectory() error {
 
 func createEmptyJSONFiles(directory string) error {
 	// Define the list of files to create
-	files := []string{"orders.json", "menu.json", "inventory.json"}
+	files := []string{"orders.json", "menu_items.json", "inventory.json"}
 
 	for _, file := range files {
 		filePath := fmt.Sprintf("%s/%s", directory, file)

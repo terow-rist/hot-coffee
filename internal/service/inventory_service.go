@@ -29,6 +29,7 @@ func (s *InventoryService) AddItem(item *models.InventoryItem) error {
 func (s *InventoryService) GetAllItems() ([]models.InventoryItem, error) {
 	return s.repo.GetAllItems()
 }
+
 func (s *InventoryService) AddInventory(ingredientID string, quantity float64) error {
 	return s.repo.AddInventory(ingredientID, quantity)
 }
