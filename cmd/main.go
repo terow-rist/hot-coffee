@@ -20,7 +20,7 @@ func main() {
 	}
 	// Check if the port is valid
 	port, err := strconv.Atoi(config.PortNumber)
-	if err != nil || port <= 0 || port > 65535 {
+	if err != nil || port < 1024 || port > 49151 {
 		fmt.Printf("Error: Invalid port number %s\n", config.PortNumber)
 		os.Exit(1)
 
